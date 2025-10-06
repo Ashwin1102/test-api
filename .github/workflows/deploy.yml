@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  REGION: ${{ secrets.REGION }}
+  REGION: mlops-lab4-repo
   PROJECT_ID: ${{ secrets.PROJECT_ID }}
   REPO_NAME: ${{ secrets.REPO_NAME }}
 
