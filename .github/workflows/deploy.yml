@@ -34,18 +34,19 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
-      - name: Build and Push Order API
-        run: |
-          IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api"
-          docker build -t $IMAGE_NAME order-api/.
-          docker push $IMAGE_NAME:latest
-
       - name: Build and Push User API
         env:
           IMAGE_NAME: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/user-api
         run: |
           docker build -t $IMAGE_NAME:latest -f user-api/Dockerfile .
           docker push $IMAGE_NAME:latest
+      
+      - name: Build and Push Order API
+        run: |
+          IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api"
+          docker build -t $IMAGE_NAME order-api/.
+          docker push $IMAGE_NAME:latest
+
 
       - name: Deploy Order API to Cloud Run
         run: |
