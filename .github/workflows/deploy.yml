@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
 
 env:
-  REGION: us-central1
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REPO_NAME: fastapi-services
+  REGION: ${{ secrets.REGION }}
+  PROJECT_ID: ${{ secrets.PROJECT_ID }}
+  REPO_NAME: ${{ secrets.REPO_NAME }}
 
 jobs:
   build-and-deploy:
@@ -40,13 +40,13 @@ jobs:
         run: |
           docker build -t $IMAGE_NAME:latest -f user-api/Dockerfile .
           docker push $IMAGE_NAME:latest
-      
+
+
       - name: Build and Push Order API
         run: |
           IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api"
-          docker build -t $IMAGE_NAME order-api/.
+          docker build -t $IMAGE_NAME:latest -f order-api/Dockerfile order-api
           docker push $IMAGE_NAME:latest
-
 
       - name: Deploy Order API to Cloud Run
         run: |
