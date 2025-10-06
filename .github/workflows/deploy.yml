@@ -37,7 +37,7 @@ jobs:
       - name: Build and Push Order API
         run: |
           IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api"
-          docker build -t $IMAGE_NAME:latest -f $GITHUB_WORKSPACE/order-api/Dockerfile $GITHUB_WORKSPACE
+          docker build -t $IMAGE_NAME backend/.
           docker push $IMAGE_NAME:latest
 
       - name: Build and Push User API
