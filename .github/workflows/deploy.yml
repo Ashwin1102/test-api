@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
 
 env:
-  REGION: mlops-lab4-repo
-  PROJECT_ID: ${{ secrets.PROJECT_ID }}
-  REPO_NAME: ${{ secrets.REPO_NAME }}
+  REGION: us-east4
+  PROJECT_ID: queryhub-473901
+  REPO_NAME: mlops-lab4-repo
 
 jobs:
   build-and-deploy:
