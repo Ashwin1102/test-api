@@ -35,10 +35,9 @@ jobs:
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
       - name: Build and Push Order API
-        env:
-          IMAGE_NAME: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api
         run: |
-          docker build -t $IMAGE_NAME:latest -f $GITHUB_WORKSPACE/order-api/Dockerfile $GITHUB_WORKSPACE
+          IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api"
+          docker build -t $IMAGE order-api/.
           docker push $IMAGE_NAME:latest
 
       - name: Build and Push User API
