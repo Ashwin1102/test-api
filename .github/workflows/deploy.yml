@@ -38,7 +38,7 @@ jobs:
         env:
           IMAGE_NAME: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api
         run: |
-          docker build -t $IMAGE_NAME:latest ./order-api
+          docker build -t $IMAGE_NAME:latest -f ./order-api/Dockerfile ./order-api
           docker push $IMAGE_NAME:latest
 
       - name: Build and Push User API
