@@ -47,6 +47,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
+          ls -la
           IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME"
           docker build -t $IMAGE -f order-api/Dockerfile order-api
           docker push $IMAGE
