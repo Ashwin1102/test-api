@@ -45,13 +45,6 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
-      - name: Build and Push User API
-        env:
-          IMAGE_NAME: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/user-api
-        run: |
-          docker build -t $IMAGE_NAME:latest -f user-api/Dockerfile .
-          docker push $IMAGE_NAME:latest
-
       - name: Build and Push Docker Image
         run: |
           IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME"
