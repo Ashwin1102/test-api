@@ -1,27 +1,36 @@
-name: Deploy FastAPI Services to GCP
+name: Deploy to Cloud Run
 
 on:
   push:
-    branches: [ main ]
+    branches: ["main"]
+    paths: ["order-api/**"]
   workflow_dispatch:
 
 env:
-  REGION: us-east4
   PROJECT_ID: queryhub-473901
-  REPO_NAME: mlops-lab4-repo
+  REGION: us-east4
+  REPOSITORY: mlops-lab4-repo
+  IMAGE_NAME: order-api
+  SERVICE: order-api
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
+      
+      - name: Install dependencies for tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
 
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
@@ -30,79 +39,86 @@ jobs:
 
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
       - name: Build and Push User API
         env:
-          IMAGE_NAME: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/user-api
+          IMAGE_NAME: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/user-api
         run: |
           docker build -t $IMAGE_NAME:latest -f user-api/Dockerfile .
           docker push $IMAGE_NAME:latest
 
-
-      - name: Build and Push Order API
+      - name: Build and Push Docker Image
         run: |
-          IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api"
-          docker build -t $IMAGE_NAME:latest -f order-api/Dockerfile order-api
-          docker push $IMAGE_NAME:latest
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME"
+          docker build -t $IMAGE order-api/.
+          docker push $IMAGE
 
-      - name: Deploy Order API to Cloud Run
-        run: |
-          gcloud run deploy order-api \
-            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api:latest \
-            --region=${{ env.REGION }} \
-            --platform=managed \
-            --allow-unauthenticated
+      # - name: Build and Push Order API
+      #   run: |
+      #     IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api"
+      #     docker build -t $IMAGE_NAME:latest -f order-api/Dockerfile order-api
+      #     docker push $IMAGE_NAME:latest
 
-      - name: Deploy User API to Cloud Run
-        run: |
-          gcloud run deploy user-api \
-            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/user-api:latest \
-            --region=${{ env.REGION }} \
-            --platform=managed \
-            --allow-unauthenticated
+      # - name: Deploy Order API to Cloud Run
+      #   run: |
+      #     gcloud run deploy order-api \
+      #       --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/order-api:latest \
+      #       --region=${{ env.REGION }} \
+      #       --platform=managed \
+      #       --allow-unauthenticated
 
-      - name: Create or Update API Gateway Config
-        run: |
-          cat > openapi.yaml <<EOF
-          openapi: 3.0.0
-          info:
-            title: FastAPI Gateway
-            version: 1.0.0
-          paths:
-            /order:
-              get:
-                x-google-backend:
-                  address: $(gcloud run services describe order-api --region=${{ env.REGION }} --format="value(status.url)")
-                responses:
-                  '200':
-                    description: Order API endpoint
-            /user:
-              get:
-                x-google-backend:
-                  address: $(gcloud run services describe user-api --region=${{ env.REGION }} --format="value(status.url)")
-                responses:
-                  '200':
-                    description: User API endpoint
-          EOF
+      # - name: Deploy User API to Cloud Run
+      #   run: |
+      #     gcloud run deploy user-api \
+      #       --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/user-api:latest \
+      #       --region=${{ env.REGION }} \
+      #       --platform=managed \
+      #       --allow-unauthenticated
 
-          gcloud api-gateway api-configs create fastapi-config \
-            --api=fastapi-gateway \
-            --openapi-spec=openapi.yaml \
-            --project=${{ env.PROJECT_ID }} \
-            --backend-auth-service-account=${{ secrets.GCP_SA_EMAIL }} \
-            || echo "Config already exists"
+      # - name: Create or Update API Gateway Config
+      #   run: |
+      #     cat > openapi.yaml <<EOF
+      #     openapi: 3.0.0
+      #     info:
+      #       title: FastAPI Gateway
+      #       version: 1.0.0
+      #     paths:
+      #       /order:
+      #         get:
+      #           x-google-backend:
+      #             address: $(gcloud run services describe order-api --region=${{ env.REGION }} --format="value(status.url)")
+      #           responses:
+      #             '200':
+      #               description: Order API endpoint
+      #       /user:
+      #         get:
+      #           x-google-backend:
+      #             address: $(gcloud run services describe user-api --region=${{ env.REGION }} --format="value(status.url)")
+      #           responses:
+      #             '200':
+      #               description: User API endpoint
+      #     EOF
 
-      - name: Deploy API Gateway
-        run: |
-          gcloud api-gateway gateways create fastapi-gateway \
-            --api=fastapi-gateway \
-            --api-config=fastapi-config \
-            --location=${{ env.REGION }} \
-            --project=${{ env.PROJECT_ID }} \
-            || echo "Gateway already exists"
+      #     gcloud api-gateway api-configs create fastapi-config \
+      #       --api=fastapi-gateway \
+      #       --openapi-spec=openapi.yaml \
+      #       --project=${{ env.PROJECT_ID }} \
+      #       --backend-auth-service-account=${{ secrets.GCP_SA_EMAIL }} \
+      #       || echo "Config already exists"
 
-      - name: Deployment success
-        run: echo "✅ FastAPI services and API Gateway deployed successfully!"
+      # - name: Deploy API Gateway
+      #   run: |
+      #     gcloud api-gateway gateways create fastapi-gateway \
+      #       --api=fastapi-gateway \
+      #       --api-config=fastapi-config \
+      #       --location=${{ env.REGION }} \
+      #       --project=${{ env.PROJECT_ID }} \
+      #       || echo "Gateway already exists"
+
+      # - name: Deployment success
+      #   run: echo "✅ FastAPI services and API Gateway deployed successfully!"
