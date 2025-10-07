@@ -58,7 +58,7 @@ jobs:
             --region=${{ env.REGION }} \
             --platform=managed \
             --allow-unauthenticated \
-            --service-account="mlops-sa@queryhub-473901.iam.gserviceaccount.com"
+            --service-account=${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
       # - name: Deploy User API to Cloud Run
       #   run: |
